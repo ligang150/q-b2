@@ -591,13 +591,41 @@ async function fetchAllOrdersRaw() {
   const orders = [];
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const ranges = [];
-  for (let start = 2; start <= 2000; start += 200) {
-    ranges.push({ start, end: Math.min(start + 199, 2000) });
+  const scanRanges = [];
+  for (let start = 1; start <= 2000; start += 500) {
+    scanRanges.push({ start, end: Math.min(start + 499, 2000) });
+  }
+
+  const scanBatches = await Promise.all(
+    scanRanges.map(async ({ start, end }) => ({
+      start,
+      gridData: await readSheetRange(SHEET_ID, `A${start}:A${end}`)
+    }))
+  );
+
+  let lastDataRow = 1;
+  for (const { start, gridData } of scanBatches) {
+    const rows = gridData.rows || [];
+    for (let i = 0; i < rows.length; i++) {
+      const cv = rows[i].values?.[0]?.cellValue;
+      if (cv && parseCellValue(cv).trim()) {
+        lastDataRow = Math.max(lastDataRow, start + i);
+      }
+    }
+  }
+
+  if (lastDataRow <= 1) {
+    ordersCache = { data: [], time: Date.now() / 1000 };
+    return [];
+  }
+
+  const dataRanges = [];
+  for (let start = 2; start <= lastDataRow; start += 200) {
+    dataRanges.push({ start, end: Math.min(start + 199, lastDataRow) });
   }
 
   const batches = await Promise.all(
-    ranges.map(async ({ start, end }) => ({
+    dataRanges.map(async ({ start, end }) => ({
       start,
       gridData: await readSheetRange(SHEET_ID, `A${start}:L${end}`)
     }))
