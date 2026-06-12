@@ -577,42 +577,46 @@ async function fetchAllOrdersRaw() {
     return ordersCache.data;
   }
 
-  const gridData = await readSheetRange(SHEET_ID, "A2:L2000");
-  const rows = gridData.rows || [];
   const orders = [];
   const todayStr = new Date().toISOString().split('T')[0];
 
-  for (let i = 0; i < rows.length; i++) {
-    const values = rows[i].values || [];
-    if (!values.length) continue;
+  for (let start = 2; start <= 2000; start += 200) {
+    const end = Math.min(start + 199, 2000);
+    const gridData = await readSheetRange(SHEET_ID, `A${start}:L${end}`);
+    const rows = gridData.rows || [];
 
-    const getCol = (idx) => {
-      const cv = values[idx]?.cellValue;
-      return cv ? parseCellValue(cv) : "";
-    };
+    for (let i = 0; i < rows.length; i++) {
+      const values = rows[i].values || [];
+      if (!values.length) continue;
 
-    const rowData = [];
-    for (let j = 0; j < 12; j++) rowData.push(getCol(j));
-    if (!rowData[0]) continue;
+      const getCol = (idx) => {
+        const cv = values[idx]?.cellValue;
+        return cv ? parseCellValue(cv) : "";
+      };
 
-    const expectedDateStr = rowData[3];
-    if (expectedDateStr && expectedDateStr < todayStr) continue;
+      const rowData = [];
+      for (let j = 0; j < 12; j++) rowData.push(getCol(j));
+      if (!rowData[0]) continue;
 
-    orders.push({
-      row_index: i + 2,
-      model: rowData[0],
-      tonnage: rowData[1],
-      customer: rowData[2],
-      expected_date: rowData[3],
-      calculated_date: rowData[4],
-      queue_date: rowData[5],
-      submitter: rowData[6],
-      remark: rowData[7],
-      serial_no: rowData[8],
-      last_entry: rowData[9],
-      submitter_id: rowData[10],
-      submit_time: rowData[11]
-    });
+      const expectedDateStr = rowData[3];
+      if (expectedDateStr && expectedDateStr < todayStr) continue;
+
+      orders.push({
+        row_index: start + i,
+        model: rowData[0],
+        tonnage: rowData[1],
+        customer: rowData[2],
+        expected_date: rowData[3],
+        calculated_date: rowData[4],
+        queue_date: rowData[5],
+        submitter: rowData[6],
+        remark: rowData[7],
+        serial_no: rowData[8],
+        last_entry: rowData[9],
+        submitter_id: rowData[10],
+        submit_time: rowData[11]
+      });
+    }
   }
 
   ordersCache = { data: orders, time: Date.now() / 1000 };
