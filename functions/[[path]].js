@@ -6,7 +6,7 @@ const SHEET_ID = "000007";
 const MODEL_SHEET_ID = "000008";
 const USER_SHEET_ID = "s9osf8";
 
-const TENCENT_HEADERS = {
+let TENCENT_HEADERS = {
   "Content-Type": "application/json",
   "Access-Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbHQiOiJkYTgxNWQxMjI3Mjk0NDU3YjQzNDEzYmRjMTZlM2U5MCIsInR5cCI6MSwiZXhwIjoxNzgyMDk0NTcyLjEwODc1MywiaWF0IjoxNzc5NTAyNTcyLjEwODc1Mywic3ViIjoiOWJjMTcyZTUzMzgxNDdkOGEzNWMxNDM4ZWE4ZDE1NzcifQ.rm3BIdD1V7FrCwdToT2arErs06xWF7hTqAh0KsCKsdw",
   "Open-Id": "9bc172e5338147d8a35c1438ea8d1577",
@@ -534,6 +534,10 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const method = request.method;
   const accessPassword = env.ACCESS_PASSWORD || "queue2025";
+
+  if (env.TENCENT_ACCESS_TOKEN) {
+    TENCENT_HEADERS["Access-Token"] = env.TENCENT_ACCESS_TOKEN;
+  }
 
   // CORS
   if (method === "OPTIONS") {
